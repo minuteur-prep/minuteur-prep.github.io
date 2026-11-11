@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Minuteur">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>Minuteur table de préparation</title>
+<style>
+/* Écrit pour fonctionner aussi sur un très vieux Safari (iPad 2) : pas de grid, pas de variables CSS, pas de gap.
+   Thème sombre unique, lisible de loin. Fond #141b24, panneaux #1e2835, accent #ffb627, vert #3ecf8e, rouge #ff5a4f. */
+*{-webkit-box-sizing:border-box;box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:#141b24;color:#f2f5f8;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:16px;line-height:1.35;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+button,input{font:inherit;color:inherit;-webkit-appearance:none;border-radius:0}
+button{cursor:pointer;border:0;background:none;margin:0}
+button:focus,input:focus{outline:3px solid #ffb627;outline-offset:2px}
+.wrap{max-width:1200px;margin:0 auto;padding:0 16px 40px}
+
+header{position:-webkit-sticky;position:sticky;top:0;z-index:5;background:#141b24;border-bottom:1px solid #3a4a5f}
+.bar{max-width:1200px;margin:0 auto;padding:6px 11px;display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-align-items:center;align-items:center}
+.bar>*{margin:4px 5px}
+h1{font-weight:700;font-size:24px;letter-spacing:.02em;text-transform:uppercase;-webkit-flex:1 1 auto;flex:1 1 auto}
+#clock{font-size:26px;font-weight:600;color:#9fb0c3}
+.tool{min-height:44px;padding:10px 14px;border-radius:10px;background:#1e2835;border:1px solid #3a4a5f;font-weight:600}
+.tool.off{color:#ff5a4f;border-color:#ff5a4f}
+
+.notice{margin:14px 0 0;padding:12px 14px;border-radius:10px;background:#1e2835;border-left:5px solid #ffb627;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-flex-wrap:wrap;flex-wrap:wrap}
+.notice p{margin:4px 12px 4px 0;-webkit-flex:1 1 240px;flex:1 1 240px}
+.notice button{padding:8px 14px;border-radius:8px;background:#283546;font-weight:600;min-height:40px}
+[hidden]{display:none!important}
+
+h2{font-size:18px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9fb0c3;margin:22px 0 10px}
+h2 small{display:block;font-size:14px;letter-spacing:0;text-transform:none;font-weight:400;margin-top:2px}
+
+.products,.timers{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin:-5px}
+.prod{position:relative;text-align:left;padding:12px 12px 12px 20px;margin:5px;border-radius:12px;background:#1e2835;border:1px solid #3a4a5f;border-left-width:8px;min-height:76px;-webkit-flex:1 0 150px;flex:1 0 150px;max-width:250px;overflow:hidden}
+.prod:active{background:#283546}
+.prod b{display:block;font-size:19px;font-weight:600;line-height:1.15;word-wrap:break-word}
+.prod span{display:block;color:#9fb0c3;font-size:14px;margin-top:2px}
+.prod .on{color:#3ecf8e;font-weight:600}
+
+.card{position:relative;background:#1e2835;border:2px solid #3a4a5f;border-left-width:9px;border-radius:14px;padding:14px;margin:5px;-webkit-flex:1 0 260px;flex:1 0 260px;max-width:390px;overflow:hidden}
+.card>*{margin-bottom:8px}
+.card>*:last-child{margin-bottom:0}
+.card.warn{border-top-color:#ffb627;border-right-color:#ffb627;border-bottom-color:#ffb627}
+.card.bad{border-top-color:#ff5a4f;border-right-color:#ff5a4f;border-bottom-color:#ff5a4f;background:#3a1a1c;-webkit-animation:flash 1s linear infinite;animation:flash 1s linear infinite}
+@-webkit-keyframes flash{0%,49%{background:#3a1a1c}50%,100%{background:#5a1d1f}}
+@keyframes flash{0%,49%{background:#3a1a1c}50%,100%{background:#5a1d1f}}
+.top{display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-items:flex-start;align-items:flex-start}
+.name{font-size:21px;font-weight:600;line-height:1.15;word-wrap:break-word;padding-right:8px}
+.tray{color:#9fb0c3;font-size:14px;white-space:nowrap}
+.time{font-weight:700;font-size:52px;line-height:1;letter-spacing:-.01em}
+.card.warn .time{color:#ffb627}
+.card.bad .time{color:#ff5a4f}
+.until{color:#9fb0c3;font-size:15px}
+.until b{color:#f2f5f8;font-weight:600}
+.pill{display:inline-block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-radius:6px;padding:3px 8px}
+.pill.ok{background:#3ecf8e;color:#04291a}
+.pill.warn{background:#ffb627;color:#1b1300}
+.pill.bad{background:#ff5a4f;color:#2a0300}
+.track{height:8px;border-radius:4px;background:#283546;overflow:hidden}
+.fill{height:100%;background:#3ecf8e;width:100%}
+.card.warn .fill{background:#ffb627}
+.card.bad .fill{background:#ff5a4f}
+.acts{display:-webkit-flex;display:flex;margin-left:-4px;margin-right:-4px}
+.acts button{-webkit-flex:1;flex:1;min-height:48px;margin:0 4px;border-radius:10px;background:#283546;font-weight:600}
+.acts .toss{background:#ff5a4f;color:#2a0300}
+.empty{-webkit-flex:1 1 100%;flex:1 1 100%;margin:5px;padding:22px;border:2px dashed #3a4a5f;border-radius:14px;color:#9fb0c3;text-align:center}
+
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:10;background:rgba(8,12,18,.85);padding:16px;overflow:auto;-webkit-overflow-scrolling:touch}
+.sheet{background:#1e2835;border:1px solid #3a4a5f;border-radius:14px;max-width:720px;margin:0 auto;padding:18px}
+.sheet>*{margin-bottom:14px}
+.sheet>*:last-child{margin-bottom:0}
+.sheet h3{font-size:22px;margin-top:0;text-transform:uppercase}
+.sheet p{color:#9fb0c3;margin-top:0}
+.row{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-align-items:flex-end;align-items:flex-end;padding:6px;margin-bottom:10px;border-radius:10px;background:#141b24}
+.row label{display:block;font-size:12px;color:#9fb0c3;margin:4px;-webkit-flex:1 1 70px;flex:1 1 70px;min-width:0}
+.row label.wide{-webkit-flex:1 1 100%;flex:1 1 100%}
+.row input{display:block;margin-top:3px;background:#1e2835;border:1px solid #3a4a5f;border-radius:8px;padding:9px 8px;min-height:44px;width:100%;font-size:16px;color:#f2f5f8}
+.row .del{min-height:44px;width:44px;margin:4px;border-radius:8px;background:#283546;color:#ff5a4f;font-size:20px;font-weight:700}
+.foot{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-justify-content:space-between;justify-content:space-between;margin-left:-4px;margin-right:-4px}
+.btn{min-height:48px;padding:10px 16px;margin:4px;border-radius:10px;background:#283546;font-weight:600}
+.btn.main{background:#ffb627;color:#1b1300}
+.btn.danger{color:#ff5a4f}
+@media (max-width:560px){.time{font-size:46px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1>Table de préparation</h1>
+    <div id="clock">--:--</div>
+    <button type="button" class="tool" id="sound-btn">Son activé</button>
+    <button type="button" class="tool" id="full-btn">Plein écran</button>
+    <button type="button" class="tool" id="settings-btn">Réglages</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="notice" id="notice-times">
+    <p><strong>Durées d'exemple.</strong> Avant de s'en servir, entrez dans Réglages les durées officielles de votre restaurant pour chaque aliment.</p>
+    <button type="button" id="notice-ok">Compris</button>
+  </div>
+  <div class="notice" id="notice-audio" hidden>
+    <p><strong>Son en attente.</strong> Touchez l'écran une fois pour activer les alarmes sonores.</p>
+  </div>
+
+  <h2>Sortir un bac du frigo <small>Touchez l'aliment au moment où il arrive sur la table</small></h2>
+  <div class="products" id="products"></div>
+
+  <h2>Bacs sur la table <small id="wasted"></small></h2>
+  <div class="timers" id="timers"></div>
+</div>
+
+<div class="overlay" id="settings" hidden>
+  <form class="sheet" id="settings-form">
+    <h3>Réglages des aliments</h3>
+    <p>Durée : temps permis sur la table, en heures et minutes. Avertir : nombre de minutes avant la fin où la carte passe au jaune avec un bip (0 pour désactiver).</p>
+    <div id="rows"></div>
+    <div class="foot">
+      <button type="button" class="btn" id="add-row">Ajouter un aliment</button>
+      <button type="button" class="btn" id="test-sound">Tester l'alarme</button>
+      <button type="button" class="btn danger" id="reset-btn">Remettre les exemples</button>
+    </div>
+    <div class="foot">
+      <button type="button" class="btn" id="cancel-btn">Annuler</button>
+      <button type="submit" class="btn main">Enregistrer</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function(){
+"use strict";
+var KEY="minuteur-table-prep-v2";
+var COLORS=["#90be6d","#06d6a0","#ff7a59","#b388ff","#e0c3a0","#4cc9f0","#7fa8ff","#ffd166","#f9a03f","#f78fb3","#c9d6df","#ffe8a3"];
+/* Durées d'exemple en minutes, tirées de documents de formation publics ; à remplacer par les durées officielles. */
+var DEFAULTS=[
+  {name:"Laitue en lanières",hold:120,warn:15},
+  {name:"Laitue en feuilles",hold:120,warn:15},
+  {name:"Tomates tranchées",hold:120,warn:15},
+  {name:"Oignons en lamelles",hold:120,warn:15},
+  {name:"Oignons réhydratés",hold:240,warn:15},
+  {name:"Cornichons",hold:360,warn:15},
+  {name:"Cornichons ondulés",hold:120,warn:15},
+  {name:"Fromage fondu",hold:120,warn:15},
+  {name:"Fromage blanc",hold:120,warn:15},
+  {name:"Fromage râpé",hold:120,warn:15},
+  {name:"Bacon cuit",hold:240,warn:15},
+  {name:"Sauce Big Mac",hold:720,warn:30},
+  {name:"Mayonnaise",hold:720,warn:30},
+  {name:"Sauce tartare",hold:720,warn:30}
+];
+function uid(){return new Date().getTime().toString(36)+Math.random().toString(36).slice(2,7)}
+function freshProducts(){var out=[];for(var i=0;i<DEFAULTS.length;i++){var d=DEFAULTS[i];out.push({id:"p"+i+uid(),name:d.name,hold:d.hold,warn:d.warn})}return out}
+function today(){var d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
+function each(list,fn){for(var i=0;i<list.length;i++)fn(list[i],i)}
+
+var S={products:freshProducts(),timers:[],sound:true,noticeSeen:false,wasted:{day:today(),n:0}};
+try{
+  var raw=localStorage.getItem(KEY);
+  if(raw){var o=JSON.parse(raw);if(o&&o.products&&o.timers&&o.products.length!==undefined){
+    S.products=o.products;S.timers=o.timers;
+    S.sound=o.sound!==false;S.noticeSeen=!!o.noticeSeen;
+    if(o.wasted&&o.wasted.day===today())S.wasted=o.wasted;
+  }}
+}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+function $(id){return document.getElementById(id)}
+function show(el,on){if(on)el.removeAttribute("hidden");else el.setAttribute("hidden","")}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function prod(id){for(var i=0;i<S.products.length;i++)if(S.products[i].id===id)return S.products[i];return null}
+function color(id){for(var i=0;i<S.products.length;i++)if(S.products[i].id===id)return COLORS[i%COLORS.length];return "#888888"}
+function two(n){return (n<10?"0":"")+n}
+function fmt(ms){
+  var neg=ms<0,s=Math.floor(Math.abs(ms)/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60);s=s%60;
+  return (neg?"+":"")+(h?h+":"+two(m):m)+":"+two(s);
+}
+function fmtDur(min){var h=Math.floor(min/60),m=min%60;return h?(h+" h"+(m?" "+two(m):"")):(m+" min")}
+function fmtClock(ts){var d=new Date(ts);return d.getHours()+" h "+two(d.getMinutes())}
+function upTo(el,cls){while(el&&el!==document){if(el.className&&(" "+el.className+" ").indexOf(" "+cls+" ")>-1)return el;el=el.parentNode}return null}
+function upToButton(el){while(el&&el!==document){if(el.tagName==="BUTTON")return el;el=el.parentNode}return null}
+
+/* ---------- Son ---------- */
+var ctx=null,lastBeep=0,primed=false;
+function unlock(){
+  try{
+    if(!ctx){var AC=window.AudioContext||window.webkitAudioContext;if(AC)ctx=new AC()}
+    if(ctx&&ctx.state==="suspended"&&ctx.resume)ctx.resume();
+    if(ctx&&!primed){
+      // Vieux Safari : il faut jouer un son (ici muet) pendant un toucher pour débloquer l'audio.
+      var o=ctx.createOscillator(),g=ctx.createGain();
+      g.gain.value=0;o.connect(g);g.connect(ctx.destination);
+      if(o.start)o.start(0);else o.noteOn(0);
+      if(o.stop)o.stop(ctx.currentTime+0.05);else o.noteOff(ctx.currentTime+0.05);
+      primed=true;
+    }
+  }catch(e){}
+  show($("notice-audio"),false);
+}
+function tone(freq,at,dur){
+  if(!ctx||!S.sound)return;
+  try{
+    var o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime+at;
+    o.type="square";o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(0.35,t+0.01);
+    g.gain.setValueAtTime(0.35,t+dur-0.02);
+    g.gain.linearRampToValueAtTime(0.0001,t+dur);
+    o.connect(g);g.connect(ctx.destination);
+    if(o.start)o.start(t);else o.noteOn(t);
+    if(o.stop)o.stop(t+dur+0.02);else o.noteOff(t+dur+0.02);
+  }catch(e){}
+}
+function alarmBeep(){tone(1900,0,0.16);tone(1900,0.24,0.16);tone(1900,0.48,0.16)}
+function warnBeep(){tone(880,0,0.18);tone(1175,0.22,0.22)}
+each(["touchstart","touchend","mousedown","keydown"],function(ev){document.addEventListener(ev,unlock,true)});
+
+/* ---------- État calculé ---------- */
+function analyse(now){
+  var info={},count={};
+  each(S.timers,function(t){
+    var p=prod(t.pid)||{name:"Aliment retiré",hold:1,warn:0};
+    var left=t.end-now;
+    var st=left<=0?"bad":(p.warn>0&&left<=p.warn*60000)?"warn":"ok";
+    info[t.id]={left:left,st:st,p:p};
+    count[t.pid]=(count[t.pid]||0)+1;
+  });
+  return {info:info,count:count};
+}
+
+/* ---------- Affichage ---------- */
+var lastSig="";
+function renderProducts(a){
+  var html="";
+  each(S.products,function(p){
+    var n=a.count[p.id]||0;
+    html+='<button type="button" class="prod" data-act="start" data-id="'+esc(p.id)+'" style="border-left-color:'+color(p.id)+'">'+
+      '<b>'+esc(p.name)+'</b><span>'+fmtDur(p.hold)+'</span>'+
+      (n?'<span class="on">'+n+(n>1?' bacs':' bac')+' sur la table</span>':'')+'</button>';
+  });
+  $("products").innerHTML=html||'<div class="empty">Aucun aliment. Ajoutez-en dans Réglages.</div>';
+}
+function renderTimers(a){
+  var list=S.timers.slice().sort(function(x,y){return x.end-y.end});
+  var html="";
+  each(list,function(t){
+    var i=a.info[t.id];
+    var pill=i.st==="bad"?'<span class="pill bad">Expiré : jeter</span>'
+      :i.st==="warn"?'<span class="pill warn">À changer bientôt</span>'
+      :'<span class="pill ok">Bon</span>';
+    html+='<div class="card '+i.st+'" style="border-left-color:'+color(t.pid)+'">'+
+      '<div class="top"><div class="name">'+esc(i.p.name)+'</div><div class="tray">Sorti à '+fmtClock(t.start)+'</div></div>'+
+      '<div class="time" id="t-'+t.id+'">'+fmt(i.left)+'</div>'+
+      '<div class="until">À jeter à <b>'+fmtClock(t.end)+'</b></div>'+
+      '<div>'+pill+'</div>'+
+      '<div class="track"><div class="fill" id="f-'+t.id+'"></div></div>'+
+      '<div class="acts">'+
+      (i.st==="bad"
+        ?'<button type="button" class="toss" data-act="swap" data-id="'+t.id+'">Jeté et remplacé</button><button type="button" data-act="toss" data-id="'+t.id+'">Jeté</button>'
+        :'<button type="button" data-act="swap" data-id="'+t.id+'">Bac remplacé</button><button type="button" data-act="done" data-id="'+t.id+'">Bac vide</button>')+
+      '</div></div>';
+  });
+  $("timers").innerHTML=html||'<div class="empty">Aucun bac sur la table. Touchez un aliment ci-dessus pour démarrer son minuteur.</div>';
+}
+function sig(a){
+  var s="";each(S.timers,function(t){s+=t.id+a.info[t.id].st+","});return s;
+}
+function paint(a){
+  each(S.timers,function(t){
+    var i=a.info[t.id],el=$("t-"+t.id),f=$("f-"+t.id);
+    if(el)el.textContent=fmt(i.left);
+    if(f){var total=Math.max(1,t.end-t.start);f.style.width=Math.max(0,Math.min(100,i.left/total*100))+"%"}
+  });
+}
+function render(){
+  var a=analyse(new Date().getTime());
+  renderProducts(a);renderTimers(a);
+  $("sound-btn").textContent=S.sound?"Son activé":"Son coupé";
+  $("sound-btn").className=S.sound?"tool":"tool off";
+  show($("notice-times"),!S.noticeSeen);
+  if(S.wasted.day!==today())S.wasted={day:today(),n:0};
+  $("wasted").textContent=S.wasted.n?("Bacs jetés aujourd'hui : "+S.wasted.n):"";
+  lastSig=sig(a);
+  paint(a);
+}
+function tick(){
+  var now=new Date().getTime(),a=analyse(now),dirty=false,anyBad=false;
+  each(S.timers,function(t){
+    var i=a.info[t.id];
+    if(i.st==="bad")anyBad=true;
+    if(i.st==="warn"&&!t.warned){t.warned=true;dirty=true;warnBeep()}
+  });
+  if(dirty)save();
+  if(sig(a)!==lastSig)render();else paint(a);
+  if(anyBad&&now-lastBeep>1400){lastBeep=now;alarmBeep();try{if(navigator.vibrate)navigator.vibrate([200,100,200])}catch(e){}}
+  var d=new Date();
+  $("clock").textContent=d.getHours()+":"+two(d.getMinutes());
+  if(S.sound&&(!ctx||(ctx.state&&ctx.state!=="running"))&&S.timers.length)show($("notice-audio"),true);
+}
+
+/* ---------- Actions ---------- */
+function startTimer(pid){
+  var p=prod(pid);if(!p)return;
+  var now=new Date().getTime();
+  S.timers.push({id:uid(),pid:pid,start:now,end:now+p.hold*60000,warned:false});
+}
+function removeTimer(id,wasted){
+  var keep=[];each(S.timers,function(t){if(t.id!==id)keep.push(t)});S.timers=keep;
+  if(wasted){if(S.wasted.day!==today())S.wasted={day:today(),n:0};S.wasted.n++}
+}
+function find(id){for(var i=0;i<S.timers.length;i++)if(S.timers[i].id===id)return S.timers[i];return null}
+document.addEventListener("click",function(e){
+  var b=upToButton(e.target);if(!b)return;
+  var act=b.getAttribute("data-act"),id=b.getAttribute("data-id");
+  if(!act)return;
+  if(act==="start")startTimer(id);
+  else if(act==="toss")removeTimer(id,true);
+  else if(act==="done")removeTimer(id,false);
+  else if(act==="swap"){
+    var t=find(id);if(!t)return;
+    var expired=t.end<=new Date().getTime(),pid=t.pid;
+    removeTimer(t.id,expired);startTimer(pid);
+  }
+  else if(act==="del"){var r=upTo(b,"row");if(r)r.parentNode.removeChild(r);return}
+  else return;
+  save();render();
+},false);
+$("sound-btn").addEventListener("click",function(){S.sound=!S.sound;save();render();if(S.sound)warnBeep()});
+$("notice-ok").addEventListener("click",function(){S.noticeSeen=true;save();render()});
+var root=document.documentElement;
+if(!root.requestFullscreen)show($("full-btn"),false);
+$("full-btn").addEventListener("click",function(){
+  try{
+    if(document.fullscreenElement)document.exitFullscreen();
+    else{var r=root.requestFullscreen();if(r&&r["catch"])r["catch"](function(){})}
+  }catch(e){}
+});
+
+/* ---------- Réglages ---------- */
+var rowSeq=0;
+function rowHtml(p){
+  var k=++rowSeq;
+  return '<div class="row" data-pid="'+esc(p.id||"")+'">'+
+    '<label class="wide" for="r-name-'+k+'">Aliment<input id="r-name-'+k+'" class="f-name" type="text" maxlength="28" value="'+esc(p.name)+'" required></label>'+
+    '<label for="r-h-'+k+'">Heures<input id="r-h-'+k+'" class="f-h" type="number" pattern="[0-9]*" min="0" max="72" value="'+Math.floor(p.hold/60)+'" required></label>'+
+    '<label for="r-m-'+k+'">Minutes<input id="r-m-'+k+'" class="f-m" type="number" pattern="[0-9]*" min="0" max="59" value="'+(p.hold%60)+'" required></label>'+
+    '<label for="r-w-'+k+'">Avertir (min)<input id="r-w-'+k+'" class="f-w" type="number" pattern="[0-9]*" min="0" max="120" value="'+p.warn+'" required></label>'+
+    '<button type="button" class="del" data-act="del" aria-label="Supprimer cet aliment">×</button></div>';
+}
+function openSettings(list){
+  var html="";each(list||S.products,function(p){html+=rowHtml(p)});
+  $("rows").innerHTML=html;
+  show($("settings"),true);
+}
+$("settings-btn").addEventListener("click",function(){openSettings()});
+$("cancel-btn").addEventListener("click",function(){show($("settings"),false)});
+$("add-row").addEventListener("click",function(){
+  $("rows").insertAdjacentHTML("beforeend",rowHtml({id:"",name:"",hold:120,warn:15}));
+  var ins=$("rows").querySelectorAll(".f-name");ins[ins.length-1].focus();
+});
+$("reset-btn").addEventListener("click",function(){openSettings(freshProducts())});
+$("test-sound").addEventListener("click",function(){alarmBeep()});
+$("settings-form").addEventListener("submit",function(e){
+  e.preventDefault();
+  var out=[],ids={};
+  each($("rows").querySelectorAll(".row"),function(r){
+    var name=r.querySelector(".f-name").value.replace(/^\s+|\s+$/g,"");if(!name)return;
+    var hold=Math.round(+r.querySelector(".f-h").value||0)*60+Math.round(+r.querySelector(".f-m").value||0);
+    hold=Math.max(1,hold);
+    var warn=Math.max(0,Math.min(hold,Math.round(+r.querySelector(".f-w").value||0)));
+    var id=r.getAttribute("data-pid")||("p"+uid());
+    out.push({id:id,name:name,hold:hold,warn:warn});ids[id]=1;
+  });
+  S.products=out;
+  var keep=[];each(S.timers,function(t){if(ids[t.pid])keep.push(t)});S.timers=keep;
+  S.noticeSeen=true;
+  save();show($("settings"),false);render();
+});
+
+/* ---------- Écran toujours allumé (appareils récents seulement) ---------- */
+var lock=null;
+function keepAwake(){
+  try{
+    if(navigator.wakeLock&&document.visibilityState==="visible"&&!lock){
+      navigator.wakeLock.request("screen").then(function(l){lock=l;l.addEventListener("release",function(){lock=null})})["catch"](function(){});
+    }
+  }catch(e){}
+}
+document.addEventListener("visibilitychange",function(){keepAwake();tick()});
+document.addEventListener("touchend",keepAwake);
+document.addEventListener("mousedown",keepAwake);
+
+render();tick();setInterval(tick,250);
+})();
+</script>
+</body>
+</html>
